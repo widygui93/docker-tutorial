@@ -1,0 +1,137 @@
+1. untuk cek daftar image yg ada di docker
+	docker image ls
+
+2. untuk download image yg sdh ada di registry
+	docker image pull <nama-image>:tag
+	docker image pull redis:latest
+
+	atau 
+
+	docker pull <nama-image>:tag
+	docker pull hello-world:latest
+
+3. untuk hapus satu atau lebih image
+	docker image rm <nama-image>:tag
+	docker image rm hello-world:latest
+
+	docker image rm hello-world nginx
+
+4. untuk cek semua container di docker daemon
+	docker container ls -a
+
+5. untuk cek container yang sedang berjalan saja
+	docker container ls
+
+6. untuk membuat container
+	docker container create --name <nama-container> <nama-image>:tag
+
+7. untuk menjalankan container
+	docker container start <container-ID atau nama-container>
+
+8. untuk menghentikan container yg sedang berjalan
+	docker container stop <container-ID atau nama-container>
+
+9. untuk menghapus container yg sudah berhenti berjalan
+	docker container rm <container-ID atau nama-container>
+
+10. untuk melihat log aplikasi di container
+	docker container logs <container-ID atau nama-container>
+
+11. untuk melihat log aplikasi di container secara real time
+	docker container logs -f <container-ID atau nama-container>
+
+12. untuk masuk ke dalam container 
+dan mengeksekusi aplikasi/script di dalam container
+	docker container exec -i -t <container-ID atau nama-container> /bin/bash
+
+13. port forwarding hanya bisa dilakukan pada saat create container
+	docker container create --name <nama-container> --publish porthost:portcontainer image:tag
+
+14. untuk menambahkan env variable
+	docker container create --name <nama-container> --env KEY="value" --env KEY="value" image:tag
+
+15. untuk menampilkan live stream dari pengunaan resource container
+	docker container stats <nama-container>
+
+16. untuk mengatur limit resource container
+	docker container create --name <nama-container> --memory 100m --cpus 0.5 image:tag
+
+17. untuk melakukan bind mounting
+	docker container create --name <nama-container> --mount "type=bind,source=folder,destination=folder,readonly" image:tag
+	contoh:
+	docker container create --name mongodata --mount "type=bind,source=/widy/Document/namaDok,destination=/data/db" --publish 27018:27017 --env MONGO_INITDB_ROOT_USERNAME=mongoadmin --env MONGO_INITDB_ROOT_PASSWORD=secret mongo:latest
+
+18. untuk melihat daftar volume, volume di buat by default saat create container
+	docker volume ls
+
+19. untuk membuat volume
+	docker volume create <nama-volume>
+
+20. untuk menghapus volume yg tidak digunakan oleh container
+	docker volume rm <nama-volume>
+
+21. untuk membuat container volume
+	docker container create --name <nama-container> --mount "type=volume,source=<nama-volume>,destination=folder" image:tag
+
+22. tahapan melakukan backup volume(long version)
+	- matikan container yg menggunakan volume yg ingin kita backup
+	- buat container baru dengan 2 mount, volume yg ingin di backup, dan
+	  bind mount folder dari sistem host(bisa image apapun karena yg di butuhkan hanya container ny saja)
+	  	docker container create --name nginxbackup --mount "type=bind,source=/User/widy/backup,destination=/backup" --mount "type=volume,source=mongodata,destination=/data" nginx:latest
+	- lakukan backup menggunakan container dengan cara meng-archive isi
+	  volume dan simpan di bind mount folder
+	  	tar cvf /backup/backup.tar.gz /data
+	- isi file backup sekarang ada di file system host
+	- delete container yg kita gunakan utk melakukan backup
+
+23. melakukan backup volume (short version) perlu image yg cukup sekali pake seperti ubuntu, nginx akan jalan terus
+	docker container run --rm --name ubuntubackup --mount "type=bind,source=/User/widy/backup,destination=/backup" --mount "type=volume,source=mongodata,destination=/data" ubuntu:latest tar cvf /backup/backup.tar.gz /data
+
+24. tahapan melakukan restore volume
+	- buat volume baru utk lokasi restore data backup
+	- buat container baru dengan dua mount, volume baru utk restore backup, dan bind mount folder dari sistem host yg berisi file backup
+	- lakukan restore menggunakan container dengan cara mengextract isi backup file ke dalam volume
+	- isi file backup sekarang sdh di restore ke volume
+	- delete container yg kita gunakan utk melakukan restore
+	- volume baru yg berisi data backup siap digunakan oleh container baru
+	
+	docker container run --rm --name ubunturestore --mount "type=bind,source=/User/widy/backup,destination=/backup" --mount "type=volume,source=mongorestore,destination=/data" ubuntu:latest bash -c "cd /data && tar xvf /backup/backup.tar.gz --strip 1"
+
+25. untuk melihat daftar docker network
+	docker network ls
+
+26. untuk membuat docker network, by default akan membuat network bridge
+	docker network create --driver <nama-driver> <nama-network>
+
+27. untuk menghapus docker network
+	docker network rm <nama-network>
+
+28. untuk menambahkan container ke network saat membuat container
+	docker container create --name <nama-container> --network <nama-network> image:tag
+
+29. untuk mengkoneksi container mongodb dengan container mongodbexpress
+	1. docker network create --driver bridge mongonetwork
+	2. docker container create --name mongodb --network mongonetwork --env MONGO_INITDB_ROOT_USERNAME=widy --env MONGO_INITDB_ROOT_PASSWORD=widy mongo:latest
+	3. docker image pull mongo-express:latest
+	4. docker container create --name mongodbexpress --network mongonetwork --publish 8081:8081 --env ME_CONFIG_MONGODB_URL="mongodb://widy:widy@mongodb:27017/" mongo-express:latest
+	5. docker container start mongodb
+	6. docker container start mongodbexpress
+
+30. untuk menghapus container dari network
+	docker network disconnect <nama-network> <nama-container>
+
+31. untuk menambahkan container yg sdh dibuat ke network
+	docker network connect <nama-network> <nama-container>
+
+32. untuk melihat detail secara menyeluruh
+	1. docker image inspect <nama-image>
+	2. docker container inspect <nama-container>
+	3. docker network inspect <nama-network>
+	4. docker volume inspect <nama-volume>
+
+33. untuk memangkas objek yg sdh tidak digunakan lagi seperti image, container, volume, network
+	1. utk menghapus semua container yg sudah di stop: docker container prune
+	2. utk menghapus semua image yg tidak digunakan container: docker image prune
+	3. utk menghapus semua network yang tidak digunakan container: docker network prune
+	4. utk menghapus semua volume yg tidak digunakan container: docker volume prune
+	5. utk menghapus semua container, image dan network yg sdh tidak digunakan sekaligus: docker system prune
