@@ -135,3 +135,11 @@ dan mengeksekusi aplikasi/script di dalam container
 	3. utk menghapus semua network yang tidak digunakan container: docker network prune
 	4. utk menghapus semua volume yg tidak digunakan container: docker volume prune
 	5. utk menghapus semua container, image dan network yg sdh tidak digunakan sekaligus: docker system prune
+	
+34. untuk build image dari Dockerfile
+	docker build -t <nama-image-yang-mau-dibuat>:<version> <path Dockerfile>
+	docker build -t restfulapi-expressjs-mongodb:1.0 .
+
+35. untuk define dan run multi-container
+	1. untuk menjalankan service di foreground: docker-compose up
+	2. unutk menjalankan service di background: docker-compose up -d
